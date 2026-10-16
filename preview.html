@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocKeeper — Менеджер особистих документів</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    :root {
+      --primary: #2e4ecb;
+      --primary-hover: #233fa8;
+      --primary-light: #e8ecfc;
+      --sidebar-bg: #1e2843;
+      --sidebar-active: #2e4ecb;
+      --bg-page: #f7f9fc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      
+      --status-active: #2e7d32;
+      --status-active-bg: #e8f5e9;
+      --status-expiring: #b45309;
+      --status-expiring-accent: #f59e0b;
+      --status-expiring-bg: #fef3c7;
+      --status-expired: #c62828;
+      --status-expired-accent: #ef4444;
+      --status-expired-bg: #fee2e2;
+      --status-perm: #4b5563;
+      --status-perm-bg: #f3f4f6;
+
+      --cat-personal: #2e4ecb;
+      --cat-transport: #0284c7;
+      --cat-finance: #7c3aed;
+      --cat-education: #ea580c;
+      --cat-housing: #eab308;
+      --cat-medical: #e11d48;
+    }
+
+    [data-theme="dark"] {
+      --bg-page: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --primary-light: #1e293b;
+      --status-active-bg: #064e3b;
+      --status-active: #6ee7b7;
+      --status-expiring-bg: #78350f;
+      --status-expiring: #fcd34d;
+      --status-expired-bg: #7f1d1d;
+      --status-expired: #fca5a5;
+      --status-perm-bg: #374151;
+      --status-perm: #d1d5db;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    /* Layout Elements */
+    #sidebar {
+      width: 250px;
+      background-color: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .brand-header {
+      padding: 24px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background-color: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .nav-item.active {
+      background-color: var(--sidebar-active);
+      color: white;
+    }
+
+    .user-profile-badge {
+      padding: 16px;
+      margin: 12px;
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .user-profile-badge:hover {
+      background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .user-avatar-small {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .user-info-text {
+      overflow: hidden;
+    }
+
+    .user-name-small {
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .user-status-small {
+      color: #6ee7b7;
+      font-size: 11px;
+    }
+
+    #main-content {
+      flex-grow: 1;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 32px 40px;
+      position: relative;
+    }
+
+    /* Views */
+    .view-container {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card styling */
+    .card {
+      background-color: var(--surface);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      overflow: hidden;
+    }
+
+    /* Dashboard Header */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header-title-box h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .header-title-box p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      outline: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(0,0,0,0.03);
+    }
+
+    .btn-danger {
+      background-color: var(--status-expired);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #b71c1c;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      padding: 20px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.15s, border-color 0.15s;
+      border: 1px solid var(--border);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .stat-card.selected {
+      border: 2px solid var(--primary);
+    }
+
+    .stat-indicator {
+      width: 4px;
+      height: 48px;
+      border-radius: 2px;
+      background-color: transparent;
+    }
+
+    .stat-indicator.expiring {
+      background-color: var(--status-expiring-accent);
+    }
+
+    .stat-indicator.expired {
+      background-color: var(--status-expired-accent);
+    }
+
+    .stat-content {
+      flex-grow: 1;
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .stat-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Filters Bar */
+    .filter-bar {
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .search-input-box {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-box .material-symbols-outlined {
+      position: absolute;
+      left: 14px;
+      color: var(--text-subtle);
+      font-size: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 14px 10px 42px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      background-color: var(--surface);
+    }
+
+    .select-dropdown {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Table */
+    .table-responsive {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .table-responsive th {
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-subtle);
+      background-color: rgba(0,0,0,0.015);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-responsive td {
+      padding: 16px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .table-responsive tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .table-responsive tbody tr:hover {
+      background-color: rgba(46, 78, 203, 0.03);
+    }
+
+    .doc-title-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+    }
+
+    .category-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .category-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-active {
+      background-color: var(--status-active-bg);
+      color: var(--status-active);
+    }
+
+    .badge-expiring {
+      background-color: var(--status-expiring-bg);
+      color: var(--status-expiring);
+    }
+
+    .badge-expired {
+      background-color: var(--status-expired-bg);
+      color: var(--status-expired);
+    }
+
+    .badge-permanent {
+      background-color: var(--status-perm-bg);
+      color: var(--status-perm);
+    }
+
+    .files-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .action-icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+    }
+
+    .action-icon-btn:hover {
+      background: rgba(0,0,0,0.06);
+      color: var(--text-main);
+    }
+
+    /* Auth Screens (Split) */
+    .auth-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      background: var(--surface);
+      z-index: 500;
+    }
+
+    .auth-left-banner {
+      flex: 5;
+      background: var(--primary);
+      color: white;
+      padding: 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .auth-banner-box {
+      max-width: 440px;
+    }
+
+    .auth-banner-logo {
+      width: 54px;
+      height: 54px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 24px;
+    }
+
+    .auth-banner-title {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .auth-banner-subtitle {
+      font-size: 18px;
+      line-height: 1.5;
+      opacity: 0.9;
+    }
+
+    .auth-right-panel {
+      flex: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: var(--surface);
+    }
+
+    .auth-form-card {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .auth-form-title {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input-wrapper .material-symbols-outlined.icon-left {
+      position: absolute;
+      left: 12px;
+      font-size: 20px;
+      color: var(--text-subtle);
+    }
+
+    .form-input-wrapper .material-symbols-outlined.icon-right {
+      position: absolute;
+      right: 12px;
+      font-size: 20px;
+      color: var(--text-subtle);
+      cursor: pointer;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      padding-left: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      background-color: var(--surface);
+    }
+
+    .auth-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .auth-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Modal dialog */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 480px;
+      width: 90%;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      animation: popIn 0.2s ease-out;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-desc {
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Detail View Grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 5fr 5fr;
+      gap: 24px;
+    }
+
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .info-item {
+      display: flex;
+      font-size: 14px;
+    }
+
+    .info-label {
+      width: 140px;
+      color: var(--text-muted);
+    }
+
+    .info-val {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .file-attachment-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      background: var(--bg-page);
+    }
+
+    /* Form View */
+    .form-step-number {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+      margin-right: 10px;
+    }
+
+    .form-step-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    /* Theme toggle segment */
+    .segment-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .segment-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .segment-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 2000;
+    }
+
+    #toast.success {
+      background: var(--status-active);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand-header">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined">folder_shared</span>
+      </div>
+      <div class="brand-name">DocKeeper</div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="switchView('home-view')">
+        <span class="material-symbols-outlined">home</span>
+        <span>Головна</span>
+      </li>
+      <li class="nav-item" onclick="switchView('categories-view')">
+        <span class="material-symbols-outlined">grid_view</span>
+        <span>Категорії</span>
+      </li>
+      <li class="nav-item" onclick="switchView('profile-view')">
+        <span class="material-symbols-outlined">person</span>
+        <span>Профіль</span>
+      </li>
+    </ul>
+
+    <div class="user-profile-badge" onclick="switchView('profile-view')">
+      <div class="user-avatar-small">О</div>
+      <div class="user-info-text">
+        <div class="user-name-small">Олена Ковальчук</div>
+        <div class="user-status-small">Онлайн</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main id="main-content">
+
+    <!-- 1. HOME VIEW (Головна) -->
+    <div id="home-view" class="view-container active">
+      <div class="header-row">
+        <div class="header-title-box">
+          <h1>Головна</h1>
+          <p>Вітаємо, Олена Ковальчук</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateForm()">
+          <span class="material-symbols-outlined">add</span>
+          Додати документ
+        </button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="card stat-card" id="card-stat-all" onclick="filterByStat(null)">
+          <div class="stat-content">
+            <div class="stat-top">
+              <span class="stat-title">Усього</span>
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--text-subtle);">arrow_outward</span>
+            </div>
+            <div class="stat-number" id="count-all">5</div>
+          </div>
+        </div>
+        <div class="card stat-card" id="card-stat-expiring" onclick="filterByStat('expiring')">
+          <div class="stat-indicator expiring"></div>
+          <div class="stat-content">
+            <div class="stat-top">
+              <span class="stat-title">Спливають скоро</span>
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--text-subtle);">arrow_outward</span>
+            </div>
+            <div class="stat-number" id="count-expiring" style="color:var(--status-expiring);">1</div>
+          </div>
+        </div>
+        <div class="card stat-card" id="card-stat-expired" onclick="filterByStat('expired')">
+          <div class="stat-indicator expired"></div>
+          <div class="stat-content">
+            <div class="stat-top">
+              <span class="stat-title">Прострочені</span>
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--text-subtle);">arrow_outward</span>
+            </div>
+            <div class="stat-number" id="count-expired" style="color:var(--status-expired);">1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="card filter-bar">
+        <div class="search-input-box">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Пошук документів..." oninput="applyFilters()">
+        </div>
+        <select id="categoryFilter" class="select-dropdown" onchange="applyFilters()">
+          <option value="all">Всі категорії</option>
+          <option value="Особисті">Особисті</option>
+          <option value="Транспорт">Транспорт</option>
+          <option value="Фінанси">Фінанси</option>
+          <option value="Освіта">Освіта</option>
+          <option value="Житло">Житло</option>
+        </select>
+        <select id="statusFilter" class="select-dropdown" onchange="applyFilters()">
+          <option value="all">Всі статуси</option>
+          <option value="active">Дійсні</option>
+          <option value="expiring">Спливають скоро</option>
+          <option value="expired">Прострочені</option>
+          <option value="permanent">Безстрокові</option>
+        </select>
+      </div>
+
+      <!-- Documents Table -->
+      <div class="card">
+        <table class="table-responsive">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Назва</th>
+              <th style="width: 18%;">Категорія</th>
+              <th style="width: 18%;">Дійсний до</th>
+              <th style="width: 20%;">Статус</th>
+              <th style="width: 10%;">Файли</th>
+              <th style="width: 6%;"></th>
+            </tr>
+          </thead>
+          <tbody id="documentTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. DOCUMENT DETAIL VIEW -->
+    <div id="detail-view" class="view-container">
+      <div class="header-row">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <button class="action-icon-btn" onclick="switchView('home-view')">
+            <span class="material-symbols-outlined" style="font-size:24px;">arrow_back</span>
+          </button>
+          <div>
+            <h1 id="detailTitle" style="font-size:24px;">Договір оренди</h1>
+            <div id="detailBadgeContainer" style="margin-top:4px;"></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-secondary" onclick="openEditFormFromDetail()">
+            <span class="material-symbols-outlined">edit</span>
+            Редагувати
+          </button>
+          <button class="btn btn-danger" onclick="openDeleteModalFromDetail()">
+            <span class="material-symbols-outlined">delete</span>
+            Видалити
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="card" style="padding: 28px;">
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:18px;">Інформація</h2>
+          <div class="info-list">
+            <div class="info-item"><span class="info-label">Категорія</span><span class="info-val" id="detailCategory">Житло</span></div>
+            <div class="info-item"><span class="info-label">Номер / серія</span><span class="info-val" id="detailNumber">№ 2024-114</span></div>
+            <div class="info-item"><span class="info-label">Орган видачі</span><span class="info-val" id="detailIssuer">Приватний договір</span></div>
+            <div class="info-item"><span class="info-label">Дата видачі</span><span class="info-val" id="detailIssueDate">30.10.2024</span></div>
+            <div class="info-item"><span class="info-label">Дійсний до</span><span class="info-val" id="detailExpiryDate">30.10.2026</span></div>
+            <div class="info-item"><span class="info-label">Нагадування</span><span class="info-val" id="detailReminder">За 31 день</span></div>
+            <div class="info-item"><span class="info-label">Нотатки</span><span class="info-val" id="detailNotes">Оренда квартири, вул. Хрещатик.</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 28px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h2 style="font-size:18px; font-weight:700;">Електронні копії</h2>
+            <span id="detailFileCount" style="color:var(--text-subtle); font-size:13px;">2 файли</span>
+          </div>
+          <div id="detailFilesList">
+            <!-- Rendered by JS -->
+          </div>
+          <div style="margin-top:20px; border:1px dashed var(--border); border-radius:10px; padding:32px; text-align:center; background:var(--bg-page);">
+            <span class="material-symbols-outlined" style="font-size:44px; color:var(--text-subtle);">description</span>
+            <div id="previewFileName" style="margin-top:10px; font-weight:500; font-size:13px; color:var(--text-muted);">
+              Попередній перегляд lease_agreement.pdf
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. FORM VIEW (Add / Edit Document) -->
+    <div id="form-view" class="view-container">
+      <div class="header-row">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <button class="action-icon-btn" onclick="switchView('home-view')">
+            <span class="material-symbols-outlined" style="font-size:24px;">arrow_back</span>
+          </button>
+          <h1 id="formPageTitle" style="font-size:24px;">Редагувати документ</h1>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-secondary" onclick="switchView('home-view')">Скасувати</button>
+          <button class="btn btn-primary" onclick="saveDocumentForm()">Зберегти</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 36px; max-width:840px; margin: 0 auto;">
+        <!-- Step 1 -->
+        <div class="form-step-title"><span class="form-step-number">1</span> Основне</div>
+        <div style="display:grid; grid-template-columns: 3fr 2fr; gap:18px; margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Назва *</label>
+            <input type="text" id="formTitle" class="form-control" style="padding-left:14px;" placeholder="наприклад, Паспорт">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Категорія *</label>
+            <select id="formCategory" class="select-dropdown" style="width:100%; height:44px;">
+              <option value="Особисті">Особисті</option>
+              <option value="Транспорт">Транспорт</option>
+              <option value="Фінанси">Фінанси</option>
+              <option value="Освіта">Освіта</option>
+              <option value="Житло">Житло</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom:28px;">
+          <div class="form-group">
+            <label class="form-label">Серія / номер</label>
+            <input type="text" id="formNumber" class="form-control" style="padding-left:14px;" placeholder="CH 123456">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Орган видачі</label>
+            <input type="text" id="formIssuer" class="form-control" style="padding-left:14px;" placeholder="ДМС України">
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="form-step-title"><span class="form-step-number">2</span> Строки дії</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom:14px;">
+          <div class="form-group">
+            <label class="form-label">Дата видачі</label>
+            <input type="text" id="formIssueDate" class="form-control" style="padding-left:14px;" placeholder="12.03.2017">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Дійсний до</label>
+            <input type="text" id="formExpiryDate" class="form-control" style="padding-left:14px;" placeholder="12.03.2027">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="formPermanentCheck" onchange="togglePermanent(this.checked)">
+            <span>Безстроковий</span>
+          </label>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; color:var(--text-muted);">Нагадати за:</span>
+            <select id="formReminderDays" class="select-dropdown">
+              <option value="7">За 7 днів</option>
+              <option value="14">За 14 днів</option>
+              <option value="30" selected>За 30 днів</option>
+              <option value="60">За 60 днів</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="form-step-title"><span class="form-step-number">3</span> Нотатки та файли</div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label">Нотатки</label>
+          <textarea id="formNotes" class="form-control" style="padding-left:14px; min-height:80px; resize:vertical;" placeholder="Додаткові примітки, коментарі..."></textarea>
+        </div>
+        <div style="margin-bottom:12px;">
+          <button type="button" class="btn btn-secondary" onclick="addSampleFile()">
+            <span class="material-symbols-outlined">upload_file</span>
+            Додати файл (PDF, JPG, PNG)
+          </button>
+        </div>
+        <div id="formFilesContainer">
+          <!-- Files list in form -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. CATEGORIES VIEW -->
+    <div id="categories-view" class="view-container">
+      <div class="header-row">
+        <div class="header-title-box">
+          <h1>Категорії</h1>
+          <p>Впорядкування та керування групами документів</p>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 6fr 4fr; gap:24px;">
+        <div class="card" style="padding:28px;">
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:18px;">Наявні категорії</h2>
+          <div id="categoriesListContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="card" style="padding:28px;">
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:18px;">Нова категорія</h2>
+          <div class="form-group">
+            <label class="form-label">Назва</label>
+            <input type="text" id="newCategoryName" class="form-control" style="padding-left:14px;" placeholder="Медичні">
+          </div>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Колір</label>
+            <div id="colorPickerContainer" style="display:flex; gap:12px; margin-top:8px;"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="createCategory()">
+            <span class="material-symbols-outlined">add</span>
+            Додати категорію
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. PROFILE VIEW -->
+    <div id="profile-view" class="view-container">
+      <div class="header-row">
+        <div class="header-title-box">
+          <h1>Профіль користувача</h1>
+          <p>Налаштування облікового запису та оформлення</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding:36px; max-width:880px; margin: 0 auto; display:grid; grid-template-columns: 4fr 1px 6fr; gap:32px;">
+        <div style="text-align:center; padding:12px 0;">
+          <div style="width:100px; height:100px; border-radius:50%; background:var(--primary-light); color:var(--primary); font-size:42px; font-weight:bold; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px;">
+            О
+          </div>
+          <h2 style="font-size:20px; font-weight:700;">Олена Ковальчук</h2>
+          <p style="color:var(--text-muted); font-size:14px; margin-top:4px;">olena@example.com</p>
+          <button class="btn btn-secondary" style="margin-top:18px;" onclick="showToast('Вибір фото профілю')">
+            <span class="material-symbols-outlined" style="font-size:18px;">camera_alt</span>
+            Змінити фото
+          </button>
+        </div>
+
+        <div style="background:var(--border);"></div>
+
+        <div>
+          <div class="form-group">
+            <label class="form-label">Ім'я</label>
+            <input type="text" id="profileName" class="form-control" style="padding-left:14px;" value="Олена Ковальчук">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Електронна пошта</label>
+            <input type="text" class="form-control" style="padding-left:14px; opacity:0.8;" value="olena@example.com" readonly>
+            <small style="color:var(--text-subtle); font-size:12px; margin-top:4px; display:block;">Пошту змінити не можна</small>
+          </div>
+          <div class="form-group" style="margin-top:20px;">
+            <label class="form-label">Тема оформлення</label>
+            <div class="segment-group">
+              <button class="segment-btn active" id="theme-light-btn" onclick="setAppTheme('light')">
+                <span class="material-symbols-outlined" style="font-size:18px;">light_mode</span> Світла
+              </button>
+              <button class="segment-btn" id="theme-dark-btn" onclick="setAppTheme('dark')">
+                <span class="material-symbols-outlined" style="font-size:18px;">dark_mode</span> Темна
+              </button>
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin:24px 0;" onclick="switchView('change-password-view')">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span class="material-symbols-outlined" style="color:var(--primary);">lock</span>
+              <span style="font-weight:500;">Змінити пароль</span>
+            </div>
+            <span class="material-symbols-outlined" style="color:var(--text-subtle);">chevron_right</span>
+          </div>
+          <div style="display:flex; gap:14px;">
+            <button class="btn btn-primary" style="flex:1;" onclick="showToast('Профіль успішно оновлено!', true)">Зберегти зміни</button>
+            <button class="btn btn-danger" onclick="logout()">
+              <span class="material-symbols-outlined">logout</span>
+              Вийти
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. CHANGE PASSWORD VIEW -->
+    <div id="change-password-view" class="view-container">
+      <div class="header-row">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <button class="action-icon-btn" onclick="switchView('profile-view')">
+            <span class="material-symbols-outlined" style="font-size:24px;">arrow_back</span>
+          </button>
+          <h1 style="font-size:24px;">Зміна пароля</h1>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:500px; margin: 30px auto; padding:32px;">
+        <div class="form-group">
+          <label class="form-label">Поточний пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" value="CurrentPassword123!">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Новий пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" placeholder="••••••••">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:28px;">
+          <label class="form-label">Підтвердіть новий пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" placeholder="••••••••">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button class="btn btn-secondary" onclick="switchView('profile-view')">Скасувати</button>
+          <button class="btn btn-primary" onclick="saveNewPassword()">Зберегти пароль</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- AUTH OVERLAY SCREENS (Login & Register) -->
+  <div id="authWrapper" class="auth-wrapper" style="display:none;">
+    <div class="auth-left-banner">
+      <div class="auth-banner-box">
+        <div class="auth-banner-logo">
+          <span class="material-symbols-outlined">folder_shared</span>
+        </div>
+        <h1 class="auth-banner-title">DocKeeper</h1>
+        <p class="auth-banner-subtitle">Усі документи та строки їх дії в одному місці</p>
+      </div>
+    </div>
+    <div class="auth-right-panel">
+      <!-- Login Box -->
+      <div id="loginBox" class="auth-form-card">
+        <h2 class="auth-form-title">Вхід</h2>
+        <div class="form-group">
+          <label class="form-label">Електронна пошта</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">email</span>
+            <input type="email" class="form-control" value="olena@example.com">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label">Пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" value="Password123!">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; height:46px;" onclick="completeLogin()">Увійти</button>
+        <div style="text-align:center; margin-top:16px;">
+          <span class="auth-link" onclick="openForgotPasswordModal()">Забули пароль?</span>
+        </div>
+        <div style="text-align:center; margin-top:12px;">
+          <span class="auth-link" onclick="showAuthBox('register')">Створити акаунт</span>
+        </div>
+      </div>
+
+      <!-- Register Box -->
+      <div id="registerBox" class="auth-form-card" style="display:none;">
+        <h2 class="auth-form-title">Створити акаунт</h2>
+        <div class="form-group">
+          <label class="form-label">Ім'я</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">person</span>
+            <input type="text" class="form-control" value="Олена Ковальчук">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Електронна пошта</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">email</span>
+            <input type="email" class="form-control" value="olena@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" value="Password123!">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label">Підтвердіть пароль</label>
+          <div class="form-input-wrapper">
+            <span class="material-symbols-outlined icon-left">lock</span>
+            <input type="password" class="form-control" value="Password123!">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; height:46px;" onclick="completeLogin()">Зареєструватися</button>
+        <div style="text-align:center; margin-top:18px;">
+          <span style="color:var(--text-muted); font-size:14px;">Вже є акаунт? </span>
+          <span class="auth-link" onclick="showAuthBox('login')">Увійти</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Forgot Password (FR3) -->
+  <div id="forgotPasswordModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 class="modal-title">Відновлення пароля</h3>
+      <p class="modal-desc">Вкажіть електронну пошту, і ми надішлемо посилання для відновлення пароля.</p>
+      <div class="form-group">
+        <label class="form-label">Електронна пошта</label>
+        <div class="form-input-wrapper">
+          <span class="material-symbols-outlined icon-left">email</span>
+          <input type="email" class="form-control" value="olena@example.com">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeForgotPasswordModal()">Скасувати</button>
+        <button class="btn btn-primary" onclick="submitForgotPassword()">Надіслати посилання</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Delete Document Confirmation (FR7) -->
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <span class="material-symbols-outlined" style="color:var(--status-expired); font-size:28px;">delete_forever</span>
+        <h3 class="modal-title" style="margin:0;">Видалити документ?</h3>
+      </div>
+      <p class="modal-desc" id="deleteDocMessage">Документ та всі його файли буде назавжди видалено.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeDeleteModal()">Скасувати</button>
+        <button class="btn btn-danger" onclick="confirmDeleteDoc()">Видалити</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast">Повідомлення</div>
+
+  <script>
+    // Initial mock data matching Lab 2 screenshots
+    let documents = [
+      {
+        id: 'doc_1',
+        title: 'Паспорт',
+        category: 'Особисті',
+        categoryColor: '#2e4ecb',
+        number: 'CH 123456',
+        issuer: 'ДМС України',
+        issueDate: '12.03.2017',
+        expiryDate: '12.03.2027',
+        status: 'active',
+        statusLabel: 'Дійсний',
+        files: [
+          { name: 'passport_scan.pdf', size: '1.2 МБ', type: 'PDF' },
+          { name: 'id_card_back.jpg', size: '0.8 МБ', type: 'JPG' }
+        ],
+        notes: 'Зберігається у сейфі вдома.',
+        reminderDays: 30
+      },
+      {
+        id: 'doc_2',
+        title: 'Водійське посвідчення',
+        category: 'Транспорт',
+        categoryColor: '#0284c7',
+        number: 'BXT 789456',
+        issuer: 'ТСЦ 4641',
+        issueDate: '08.11.2021',
+        expiryDate: '08.11.2031',
+        status: 'active',
+        statusLabel: 'Дійсний',
+        files: [
+          { name: 'driver_license.pdf', size: '1.5 МБ', type: 'PDF' }
+        ],
+        notes: 'Категорія В. Потрібно перевірити статус перед виїздом.',
+        reminderDays: 30
+      },
+      {
+        id: 'doc_3',
+        title: 'Страховий поліс',
+        category: 'Фінанси',
+        categoryColor: '#7c3aed',
+        number: 'POL-992341',
+        issuer: 'НАСК Оранта',
+        issueDate: '01.02.2025',
+        expiryDate: '01.02.2026',
+        status: 'expired',
+        statusLabel: 'Прострочений',
+        files: [
+          { name: 'insurance_policy.pdf', size: '2.1 МБ', type: 'PDF' },
+          { name: 'euro_protocol.pdf', size: '0.5 МБ', type: 'PDF' },
+          { name: 'receipt.png', size: '0.3 МБ', type: 'PNG' }
+        ],
+        notes: 'Автоцивілка. Терміново необхідно поновити!',
+        reminderDays: 14
+      },
+      {
+        id: 'doc_4',
+        title: 'Диплом',
+        category: 'Освіта',
+        categoryColor: '#ea580c',
+        number: 'В22 № 543210',
+        issuer: 'НУ "Львівська політехніка"',
+        issueDate: '30.06.2024',
+        expiryDate: 'Безстроковий',
+        status: 'permanent',
+        statusLabel: 'Безстроковий',
+        files: [
+          { name: 'diploma_bachelor.pdf', size: '3.4 МБ', type: 'PDF' }
+        ],
+        notes: 'Диплом бакалавра з відзнакою.',
+        reminderDays: 0
+      },
+      {
+        id: 'doc_5',
+        title: 'Договір оренди',
+        category: 'Житло',
+        categoryColor: '#eab308',
+        number: '№ 2024-114',
+        issuer: 'Приватний договір',
+        issueDate: '30.10.2024',
+        expiryDate: '30.10.2026',
+        status: 'expiring',
+        statusLabel: 'Спливає скоро',
+        files: [
+          { name: 'lease_agreement.pdf', size: '1.4 МБ', type: 'PDF' },
+          { name: 'lease_annex.pdf', size: '0.8 МБ', type: 'PDF' }
+        ],
+        notes: 'Оренда квартири, вул. Хрещатик.',
+        reminderDays: 31
+      }
+    ];
+
+    let categories = [
+      { id: 'cat_1', name: 'Особисті', color: '#2e4ecb', count: 1 },
+      { id: 'cat_2', name: 'Транспорт', color: '#0284c7', count: 1 },
+      { id: 'cat_3', name: 'Фінанси', color: '#7c3aed', count: 1 },
+      { id: 'cat_4', name: 'Освіта', color: '#ea580c', count: 1 },
+      { id: 'cat_5', name: 'Житло', color: '#eab308', count: 1 }
+    ];
+
+    let currentEditingDocId = null;
+    let selectedStatFilter = null;
+    let activeDeleteDocId = null;
+    let tempFormFiles = [];
+
+    // Switch Views
+    function switchView(viewId) {
+      document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) {
+        target.classList.add('active');
+      }
+
+      // Update active nav item
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      if (viewId === 'home-view') document.querySelectorAll('.nav-item')[0].classList.add('active');
+      if (viewId === 'categories-view') document.querySelectorAll('.nav-item')[1].classList.add('active');
+      if (viewId === 'profile-view') document.querySelectorAll('.nav-item')[2].classList.add('active');
+    }
+
+    // Render Home Table
+    function renderDocuments() {
+      const tbody = document.getElementById('documentTableBody');
+      const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+      const catVal = document.getElementById('categoryFilter').value;
+      const statusVal = document.getElementById('statusFilter').value;
+
+      let filtered = documents.filter(doc => {
+        if (searchVal && !doc.title.toLowerCase().includes(searchVal) && !(doc.number && doc.number.toLowerCase().includes(searchVal))) {
+          return false;
+        }
+        if (catVal !== 'all' && doc.category !== catVal) return false;
+        if (statusVal !== 'all' && doc.status !== statusVal) return false;
+        if (selectedStatFilter && doc.status !== selectedStatFilter) return false;
+        return true;
+      });
+
+      // Update counters
+      document.getElementById('count-all').innerText = documents.length;
+      document.getElementById('count-expiring').innerText = documents.filter(d => d.status === 'expiring').length;
+      document.getElementById('count-expired').innerText = documents.filter(d => d.status === 'expired').length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding: 48px 20px; color:var(--text-muted);">
+              <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-subtle);">search_off</span>
+              <p style="margin-top:8px; font-weight:600;">Нічого не знайдено</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(doc => {
+        let badgeClass = 'badge-active';
+        let badgeIcon = 'check_circle';
+        if (doc.status === 'expiring') {
+          badgeClass = 'badge-expiring';
+          badgeIcon = 'warning';
+        } else if (doc.status === 'expired') {
+          badgeClass = 'badge-expired';
+          badgeIcon = 'error';
+        } else if (doc.status === 'permanent') {
+          badgeClass = 'badge-permanent';
+          badgeIcon = 'all_inclusive';
+        }
+
+        return `
+          <tr onclick="openDocumentDetail('${doc.id}')">
+            <td>
+              <div class="doc-title-cell">
+                <span class="material-symbols-outlined" style="color:var(--primary); font-size:22px;">description</span>
+                <span>${doc.title}</span>
+              </div>
+            </td>
+            <td>
+              <div class="category-tag">
+                <span class="category-dot" style="background-color: ${doc.categoryColor};"></span>
+                <span>${doc.category}</span>
+              </div>
+            </td>
+            <td>${doc.expiryDate}</td>
+            <td>
+              <span class="badge ${badgeClass}">
+                <span class="material-symbols-outlined" style="font-size:14px;">${badgeIcon}</span>
+                ${doc.statusLabel}
+              </span>
+            </td>
+            <td>
+              <span class="files-badge">
+                <span class="material-symbols-outlined" style="font-size:16px;">attach_file</span>
+                ${doc.files.length}
+              </span>
+            </td>
+            <td>
+              <button class="action-icon-btn" onclick="event.stopPropagation(); triggerRowMenu('${doc.id}')">
+                <span class="material-symbols-outlined">more_vert</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function applyFilters() {
+      renderDocuments();
+    }
+
+    function filterByStat(stat) {
+      if (selectedStatFilter === stat) {
+        selectedStatFilter = null;
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+      } else {
+        selectedStatFilter = stat;
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+        if (stat === 'expiring') document.getElementById('card-stat-expiring').classList.add('selected');
+        else if (stat === 'expired') document.getElementById('card-stat-expired').classList.add('selected');
+      }
+      renderDocuments();
+    }
+
+    function openDocumentDetail(id) {
+      const doc = documents.find(d => d.id === id);
+      if (!doc) return;
+      currentEditingDocId = id;
+
+      document.getElementById('detailTitle').innerText = doc.title;
+      document.getElementById('detailCategory').innerText = doc.category;
+      document.getElementById('detailNumber').innerText = doc.number || '—';
+      document.getElementById('detailIssuer').innerText = doc.issuer || '—';
+      document.getElementById('detailIssueDate').innerText = doc.issueDate || '—';
+      document.getElementById('detailExpiryDate').innerText = doc.expiryDate;
+      document.getElementById('detailReminder').innerText = `За ${doc.reminderDays} днів`;
+      document.getElementById('detailNotes').innerText = doc.notes || '—';
+
+      let badgeHtml = '';
+      if (doc.status === 'expiring') {
+        badgeHtml = `<span class="badge badge-expiring"><span class="material-symbols-outlined" style="font-size:14px;">warning</span> Спливає через 31 день</span>`;
+      } else if (doc.status === 'expired') {
+        badgeHtml = `<span class="badge badge-expired"><span class="material-symbols-outlined" style="font-size:14px;">error</span> Прострочений</span>`;
+      } else if (doc.status === 'permanent') {
+        badgeHtml = `<span class="badge badge-permanent"><span class="material-symbols-outlined" style="font-size:14px;">all_inclusive</span> Безстроковий</span>`;
+      } else {
+        badgeHtml = `<span class="badge badge-active"><span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> Дійсний</span>`;
+      }
+      document.getElementById('detailBadgeContainer').innerHTML = badgeHtml;
+
+      document.getElementById('detailFileCount').innerText = `${doc.files.length} файли`;
+      document.getElementById('detailFilesList').innerHTML = doc.files.map(f => `
+        <div class="file-attachment-box">
+          <span class="material-symbols-outlined" style="color:var(--primary); font-size:24px;">picture_as_pdf</span>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:13px;">${f.name}</div>
+            <div style="font-size:11px; color:var(--text-subtle);">${f.size}</div>
+          </div>
+          <button class="action-icon-btn" onclick="showToast('Завантаження ${f.name}...')">
+            <span class="material-symbols-outlined">download</span>
+          </button>
+        </div>
+      `).join('');
+
+      if (doc.files.length > 0) {
+        document.getElementById('previewFileName').innerText = `Попередній перегляд ${doc.files[0].name}`;
+      }
+
+      switchView('detail-view');
+    }
+
+    function openCreateForm() {
+      currentEditingDocId = null;
+      document.getElementById('formPageTitle').innerText = 'Додати документ';
+      document.getElementById('formTitle').value = '';
+      document.getElementById('formCategory').value = 'Особисті';
+      document.getElementById('formNumber').value = '';
+      document.getElementById('formIssuer').value = '';
+      document.getElementById('formIssueDate').value = '16.10.2026';
+      document.getElementById('formExpiryDate').value = '16.10.2031';
+      document.getElementById('formPermanentCheck').checked = false;
+      document.getElementById('formNotes').value = '';
+      tempFormFiles = [
+        { name: 'document_scan.pdf', size: '1.1 МБ', type: 'PDF' }
+      ];
+      renderFormFiles();
+      switchView('form-view');
+    }
+
+    function openEditFormFromDetail() {
+      const doc = documents.find(d => d.id === currentEditingDocId);
+      if (!doc) return;
+      document.getElementById('formPageTitle').innerText = 'Редагувати документ';
+      document.getElementById('formTitle').value = doc.title;
+      document.getElementById('formCategory').value = doc.category;
+      document.getElementById('formNumber').value = doc.number || '';
+      document.getElementById('formIssuer').value = doc.issuer || '';
+      document.getElementById('formIssueDate').value = doc.issueDate || '';
+      document.getElementById('formExpiryDate').value = doc.expiryDate === 'Безстроковий' ? '' : doc.expiryDate;
+      document.getElementById('formPermanentCheck').checked = (doc.status === 'permanent');
+      document.getElementById('formNotes').value = doc.notes || '';
+      tempFormFiles = [...doc.files];
+      renderFormFiles();
+      switchView('form-view');
+    }
+
+    function renderFormFiles() {
+      const c = document.getElementById('formFilesContainer');
+      c.innerHTML = tempFormFiles.map((f, i) => `
+        <div class="file-attachment-box" style="margin-top:8px;">
+          <span class="material-symbols-outlined" style="color:var(--primary); font-size:20px;">description</span>
+          <div style="flex:1;">
+            <div style="font-weight:500; font-size:13px;">${f.name}</div>
+            <div style="font-size:11px; color:var(--text-subtle);">${f.size}</div>
+          </div>
+          <button class="action-icon-btn" onclick="removeTempFile(${i})">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function addSampleFile() {
+      tempFormFiles.push({
+        name: `attachment_${tempFormFiles.length + 1}.pdf`,
+        size: '1.2 МБ',
+        type: 'PDF'
+      });
+      renderFormFiles();
+    }
+
+    function removeTempFile(i) {
+      tempFormFiles.splice(i, 1);
+      renderFormFiles();
+    }
+
+    function togglePermanent(isPerm) {
+      const exp = document.getElementById('formExpiryDate');
+      if (isPerm) {
+        exp.value = 'Безстроковий';
+        exp.disabled = true;
+      } else {
+        exp.value = '16.10.2031';
+        exp.disabled = false;
+      }
+    }
+
+    function saveDocumentForm() {
+      const title = document.getElementById('formTitle').value.trim();
+      if (!title) {
+        alert('Будь ласка, вкажіть назву документа!');
+        return;
+      }
+
+      const cat = document.getElementById('formCategory').value;
+      const catObj = categories.find(c => c.name === cat) || categories[0];
+      const isPerm = document.getElementById('formPermanentCheck').checked;
+      const expDate = isPerm ? 'Безстроковий' : document.getElementById('formExpiryDate').value;
+
+      if (currentEditingDocId) {
+        const doc = documents.find(d => d.id === currentEditingDocId);
+        if (doc) {
+          doc.title = title;
+          doc.category = cat;
+          doc.categoryColor = catObj.color;
+          doc.number = document.getElementById('formNumber').value;
+          doc.issuer = document.getElementById('formIssuer').value;
+          doc.issueDate = document.getElementById('formIssueDate').value;
+          doc.expiryDate = expDate;
+          doc.status = isPerm ? 'permanent' : 'active';
+          doc.statusLabel = isPerm ? 'Безстроковий' : 'Дійсний';
+          doc.notes = document.getElementById('formNotes').value;
+          doc.files = [...tempFormFiles];
+        }
+        showToast('Документ збережено!', true);
+        openDocumentDetail(currentEditingDocId);
+      } else {
+        const newId = 'doc_' + Date.now();
+        documents.unshift({
+          id: newId,
+          title: title,
+          category: cat,
+          categoryColor: catObj.color,
+          number: document.getElementById('formNumber').value,
+          issuer: document.getElementById('formIssuer').value,
+          issueDate: document.getElementById('formIssueDate').value,
+          expiryDate: expDate,
+          status: isPerm ? 'permanent' : 'active',
+          statusLabel: isPerm ? 'Безстроковий' : 'Дійсний',
+          notes: document.getElementById('formNotes').value,
+          reminderDays: 30,
+          files: [...tempFormFiles]
+        });
+        showToast('Документ успішно створено!', true);
+        renderDocuments();
+        switchView('home-view');
+      }
+    }
+
+    function openDeleteModalFromDetail() {
+      activeDeleteDocId = currentEditingDocId;
+      const doc = documents.find(d => d.id === activeDeleteDocId);
+      document.getElementById('deleteDocMessage').innerText = `Документ «${doc ? doc.title : ''}» і всі його файли буде видалено назавжди.`;
+      document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('active');
+      activeDeleteDocId = null;
+    }
+
+    function confirmDeleteDoc() {
+      if (activeDeleteDocId) {
+        documents = documents.filter(d => d.id !== activeDeleteDocId);
+        closeDeleteModal();
+        showToast('Документ видалено', true);
+        renderDocuments();
+        switchView('home-view');
+      }
+    }
+
+    function triggerRowMenu(id) {
+      if (confirm('Бажаєте видалити цей документ?')) {
+        documents = documents.filter(d => d.id !== id);
+        renderDocuments();
+        showToast('Документ видалено');
+      }
+    }
+
+    // Categories View
+    function renderCategories() {
+      const c = document.getElementById('categoriesListContainer');
+      c.innerHTML = categories.map((cat, i) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="width:12px; height:12px; border-radius:50%; background:${cat.color};"></span>
+            <span style="font-weight:600; font-size:15px;">${cat.name}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="background:var(--bg-page); padding:4px 10px; border-radius:12px; font-size:12px; color:var(--text-muted);">${cat.count} документ</span>
+            <button class="action-icon-btn" onclick="showToast('Редагування категорії')"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+            <button class="action-icon-btn" onclick="deleteCategory(${i})"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+          </div>
+        </div>
+      `).join('');
+
+      // Color picker
+      const colors = ['#2e4ecb', '#0284c7', '#7c3aed', '#ea580c', '#eab308', '#e11d48', '#10b981'];
+      document.getElementById('colorPickerContainer').innerHTML = colors.map((col, idx) => `
+        <div onclick="selectCategoryColor('${col}', this)" style="width:28px; height:28px; border-radius:50%; background:${col}; cursor:pointer; ${idx===5?'border:2px solid white; box-shadow:0 0 0 2px var(--primary);':''}"></div>
+      `).join('');
+    }
+
+    let selectedCatColor = '#e11d48';
+    function selectCategoryColor(col, el) {
+      selectedCatColor = col;
+      document.querySelectorAll('#colorPickerContainer div').forEach(d => {
+        d.style.boxShadow = 'none';
+        d.style.border = 'none';
+      });
+      el.style.border = '2px solid white';
+      el.style.boxShadow = `0 0 0 2px ${col}`;
+    }
+
+    function createCategory() {
+      const name = document.getElementById('newCategoryName').value.trim();
+      if (!name) {
+        alert('Вкажіть назву категорії!');
+        return;
+      }
+      categories.push({
+        id: 'cat_' + Date.now(),
+        name: name,
+        color: selectedCatColor,
+        count: 0
+      });
+      document.getElementById('newCategoryName').value = '';
+      renderCategories();
+      showToast(`Категорію «${name}» створено!`, true);
+    }
+
+    function deleteCategory(index) {
+      if (categories[index].count > 0) {
+        alert(`Неможливо видалити категорію «${categories[index].name}», оскільки вона містить документи!`);
+        return;
+      }
+      categories.splice(index, 1);
+      renderCategories();
+      showToast('Категорію видалено');
+    }
+
+    // Theme Switch
+    function setAppTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('theme-light-btn').classList.toggle('active', theme === 'light');
+      document.getElementById('theme-dark-btn').classList.toggle('active', theme === 'dark');
+      showToast(`Увімкнено ${theme === 'dark' ? 'темну' : 'світлу'} тему`);
+    }
+
+    // Auth Overlay Methods
+    function showAuthBox(type) {
+      document.getElementById('authWrapper').style.display = 'flex';
+      if (type === 'register') {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('registerBox').style.display = 'block';
+      } else {
+        document.getElementById('loginBox').style.display = 'block';
+        document.getElementById('registerBox').style.display = 'none';
+      }
+    }
+
+    function completeLogin() {
+      document.getElementById('authWrapper').style.display = 'none';
+      switchView('home-view');
+      showToast('Успішна авторизація!', true);
+    }
+
+    function logout() {
+      showAuthBox('login');
+      showToast('Ви вийшли з системи');
+    }
+
+    function openForgotPasswordModal() {
+      document.getElementById('forgotPasswordModal').classList.add('active');
+    }
+
+    function closeForgotPasswordModal() {
+      document.getElementById('forgotPasswordModal').classList.remove('active');
+    }
+
+    function submitForgotPassword() {
+      closeForgotPasswordModal();
+      showToast('Якщо акаунт існує, лист для скидання надіслано.', true);
+    }
+
+    function saveNewPassword() {
+      switchView('profile-view');
+      showToast('Пароль успішно змінено!', true);
+    }
+
+    function showToast(msg, isSuccess) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.className = isSuccess ? 'success' : '';
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      renderDocuments();
+      renderCategories();
+    });
+  </script>
+</body>
+</html>

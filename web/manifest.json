@@ -1,0 +1,18 @@
+{
+  "name": "DocKeeper — Менеджер особистих документів",
+  "short_name": "DocKeeper",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#2E4ECB",
+  "theme_color": "#2E4ECB",
+  "description": "Менеджер особистих документів. Каталог документів із категоріями, строками дії та електронними копіями.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
